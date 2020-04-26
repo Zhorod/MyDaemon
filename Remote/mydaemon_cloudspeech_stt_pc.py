@@ -10,7 +10,7 @@ from google.cloud.speech import types
 import pyaudio
 from six.moves import queue
 
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "./voice-assistant-246008-863f5e39dc2c.json"
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "./voice-assistant-246008-3e3fe4524b82.json"
 
 # Audio recording parameters
 RATE = 16000

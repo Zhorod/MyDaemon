@@ -9,7 +9,7 @@ from time import sleep
 from google.cloud import texttospeech
 
 # set an environment variable so google cloud speach can find credentials
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "./voice-assistant-246008-863f5e39dc2c.json"
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "./voice-assistant-246008-3e3fe4524b82.json"
 
 
 class MyDaemonTTS:
