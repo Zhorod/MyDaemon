@@ -1,3 +1,5 @@
 
 MD_SPOKEN_UI/voice-assistant-246008-3e3fe4524b82.json
 *.pyc
+*.xml
+*.iml
