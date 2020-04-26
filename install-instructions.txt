@@ -1,0 +1,30 @@
+MyDaemonV0 installation instructions
+Updated 25th April 2020
+
+1) Cloudspeech credentials
+The MyDaemon spoken user interface uses Google CloudSPeech for both speech to text (STT) and text to speech (TTS). There are two implementations, one for a PC and one for a Raspberry PI. Both require credentials from Google in the form of a JSON though they need to be put in different places for the PI and PC version. 
+
+For the PC version, go to the Google Cloud Console https://console.cloud.google.com/. You need to set up a project and activate the cloudspeech (STT and TTS) apis. CLick top left, go to APS and services, enable APIS and services, and enable:
+Cloud Speech-to-Text API
+Cloud Text-to-Speech API
+
+Next, go to credentials and create a service account. Look up online how to do this. You have to then click on the service and create a key that will be downloaded as a JSON file.
+
+Copy the JSON file into the MD_SPOKEN_UI directory.
+
+Update the hardcoded path in md_stt_pc.py and md_tts_pc.py with the name of the JSON. 
+
+
+2) Install modules 
+...
+...
+...
+
+
+3) Dowdload the spacy databse
+
+python -m spacy download en_core_web_sm (small - 13 MB)
+python -m spacy download en_core_web_lg (large - 800 MB)
+
+
+
