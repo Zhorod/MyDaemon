@@ -14,6 +14,16 @@ Copy the JSON file into the MD_SPOKEN_UI directory.
 
 Update the hardcoded path in md_stt_pc.py and md_tts_pc.py with the name of the JSON. 
 
+For the PI version, the STT needs a json in the home directory called:
+
+cloud_speech.josn
+
+the TTS needs a joson in the Remote directory called:
+
+voice-assistant.json
+
+The TTS json is the same as for the PC version whereas the STT version is slightly different. FOr the STT look up online about setting up cloud speech credentials for the google AIY project.
+
 
 2) Install modules 
 I have not included a complete list here.
