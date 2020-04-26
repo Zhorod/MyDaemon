@@ -47,11 +47,11 @@ class MyDaemonSTT:
 
 MyDaemonSTT_ = MyDaemonSTT()
 
-def mydaemon_stt_capture():
+def md_stt_capture():
     return(MyDaemonSTT_.capture_utterance())
 
 def main():
-    print(mydaemon_stt_capture())
+    print(md_stt_capture())
 
 if __name__ == '__main__':
     main()

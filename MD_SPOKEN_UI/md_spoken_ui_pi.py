@@ -11,8 +11,8 @@ import sys
 from google.cloud.speech import enums
 from google.cloud.speech import types
 
-from mydaemon_cloudspeech_tts_pi import mydaemon_tts_speak
-from mydaemon_cloudspeech_stt_pi import mydaemon_stt_capture
+from md_tts_pi import md_tts_speak
+from md_stt_pi import md_stt_capture
 
 def on_connect(mqtt_client, userdata, flags, rc):
     print("Connected with result code " + str(rc))
@@ -35,11 +35,11 @@ def on_message(mqtt_client, userdata, msg):
 
     # if the message topic is mydaemon
     if msg.topic == "mydaemon":
-        mydaemon_tts_speak(message_json["mydaemon"])
+        md_tts_speak(message_json["mydaemon"])
     
     # get the next input from the user
     while True:
-        utterance = mydaemon_stt_capture()
+        utterance = md_stt_capture()
         #MyDaemonSTT_.recognise_speech()
         if utterance != None:
 
