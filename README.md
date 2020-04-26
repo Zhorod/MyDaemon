@@ -1,2 +1,2 @@
-# MyDaemon
-This is the repository for the MyDaemon project to create a digital friend.
+# mydeamonV0
+test repository for the future MyDaemon project
