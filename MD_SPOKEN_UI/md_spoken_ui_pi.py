@@ -42,14 +42,13 @@ def on_message(mqtt_client, userdata, msg):
         utterance = md_stt_capture()
         #MyDaemonSTT_.recognise_speech()
         if utterance != None:
-
-            # create a string which has a question and and space for an answer
-            qa_json = {"user": "", "mydaemon": ""}
-            qa_json["user"] = utterance
-            qa_string = json.dumps(qa_json)
-
+            # The utternace has data in it
+            # Add the utterance to the JSON
+            message_json["user"] = utterance
+            message_string = json.dumps(message_json)
+            
             # publish the JSON
-            mqtt_publish.single("user", qa_string, hostname="test.mosquitto.org")
+            mqtt_publish.single("user", message_string, hostname="test.mosquitto.org")
             # print the JSON
             print("JSON published: ", qa_json)
             if utterance.lower() == "shutdown" or utterance.lower() == "shut down":
@@ -66,11 +65,7 @@ def main():
     local_mqtt_client.connect("test.mosquitto.org", 1883, 60)
 
     while True:
-        # Publish an empty JSON to get the interacvtion started
-        qa_json = {"user": "", "mydaemon": ""}
-        qa_json["user"] = ""
-        qa_string = json.dumps(qa_json)
-        mqtt_publish.single("user", qa_string, hostname="test.mosquitto.org")
+        # Wait for the question generator
         local_mqtt_client.loop_forever()
 
 
