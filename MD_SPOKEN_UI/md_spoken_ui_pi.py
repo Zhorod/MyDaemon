@@ -35,7 +35,8 @@ def on_message(mqtt_client, userdata, msg):
 
     # if the message topic is mydaemon
     if msg.topic == "mydaemon":
-        md_tts_speak(message_json["mydaemon"])
+        if message_json["mydaemon"] != None:
+            md_tts_speak(message_json["mydaemon"])
     
     # get the next input from the user
     while True:
@@ -50,11 +51,13 @@ def on_message(mqtt_client, userdata, msg):
             # publish the JSON
             mqtt_publish.single("user", message_string, hostname="test.mosquitto.org")
             # print the JSON
-            print("JSON published: ", qa_json)
+            print("JSON published: ", message_json)
             if utterance.lower() == "shutdown" or utterance.lower() == "shut down":
                 sys.exit()
             # stop listening and wait for an answer
             break
+        # ideally here we want to check if another message has been received or continue waiting
+        # not sure how to do this
 
 
 def main():
