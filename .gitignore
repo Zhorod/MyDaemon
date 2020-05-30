@@ -3,3 +3,7 @@ MD_SPOKEN_UI/voice-assistant-246008-3e3fe4524b82.json
 *.pyc
 *.xml
 *.iml
+MD_CORRESPONDENCE_MANAGER/input_text.txt
+MD_CORRESPONDENCE_MANAGER/profile-backup.txt
+MD_CORRESPONDENCE_MANAGER/profile.txt
+MD_CORRESPONDENCE_MANAGER/test_fio.py

@@ -47,7 +47,7 @@ def on_message(mqtt_client, userdata, msg):
         utterance = md_stt_capture()
         if utterance != None:
             # The utterance has data in it
-            # Create a string which has a question and and space for an answer
+            # Add the utterance to the JSON
             message_json["user"] = utterance
             message_string = json.dumps(message_json)
 
