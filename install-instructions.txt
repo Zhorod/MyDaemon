@@ -1,5 +1,5 @@
-MyDaemonV0 installation instructions
-Updated 25th April 2020
+MyDaemonV2 installation instructions
+Updated 30th May2020
 
 1) Cloudspeech credentials
 The MyDaemon spoken user interface uses Google CloudSPeech for both speech to text (STT) and text to speech (TTS). There are two implementations, one for a PC and one for a Raspberry PI. Both require credentials from Google in the form of a JSON though they need to be put in different places for the PI and PC version. 
@@ -19,12 +19,16 @@ Update the hardcoded path in md_stt_pc.py and md_tts_pc.py with the name of the 
 ...
 ...
 ...
+too many to list and changes too quickly
 
 
 3) Dowdload the spacy databse
 
-python -m spacy download en_core_web_sm (small - 13 MB)
-python -m spacy download en_core_web_lg (large - 800 MB)
+python -m spacy download en_core_web_sm (small - 13 MB) - default is this one
+python -m spacy download en_core_web_lg (large - 800 MB) - will be requried for entity linking
 
+4) Requries a Facebook Graph API token:
 
+https://developers.facebook.com/tools/explorer?method=GET&path=me%3Ffields%3Did%2Cname%2Cposts&version=v7.0
 
+Get it working here and then generated a token and copy into profile manager.
