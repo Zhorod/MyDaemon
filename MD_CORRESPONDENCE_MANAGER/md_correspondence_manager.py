@@ -50,7 +50,7 @@ class MyDaemonCorrespondenceManager:
         triple = self.nlp.processTextTripleSingle(user_text)
         if triple != "" and triple[1] != "" and triple[2] != "":
             self.response_triple= triple
-            response = self.question_entity + ". " + self.response_triple[2] + ". " + self.response_triple[1]
+            response = self.question_entity + ". " + self.response_triple[1] + ". " + self.response_triple[2]
 
             #response = self.response_triple[0] + ". " + self.response_triple [1] + ". " + self.response_triple [2]
             self.exchange_type = "CONFIRM"
