@@ -50,7 +50,7 @@ class MyDaemonCorrespondenceManager:
         triple = self.nlp.processTextTripleSingle(user_text)
         if triple != "" and triple[1] != "" and triple[2] != "":
             self.response_triple= triple
-            response = self.question_entity + ". " + self.response_triple[2] + ". " + self.response_triple[1]
+            response = self.question_entity + ". " + self.response_triple[1] + ". " + self.response_triple[2]
 
             #response = self.response_triple[0] + ". " + self.response_triple [1] + ". " + self.response_triple [2]
             self.exchange_type = "CONFIRM"
@@ -150,12 +150,12 @@ class MyDaemonCorrespondenceManager:
             return (response)
 
         # try to get an unprocessed post
-        next_unread_post = self.profile.get_next_unprocessed_post()
-        if next_unread_post != "":
-            print("Unread post is:", next_unread_post)
-            # build latest post response and return
-            response = self.first_name + ". Can you tell me more about your recent Facebook post that said: " + next_unread_post
-            return (response)
+        #next_unread_post = self.profile.get_next_unprocessed_post()
+        #if next_unread_post != "":
+        #    print("Unread post is:", next_unread_post)
+        #    # build latest post response and return
+        #    response = self.first_name + ". Can you tell me more about your recent Facebook post that said: " + next_unread_post
+        #    return (response)
 
         # default to chatbot
         response = self.eliza.get_next_response(utterance)
