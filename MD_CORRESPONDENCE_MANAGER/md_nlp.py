@@ -87,16 +87,18 @@ class MyDaemonNLP:
                 #print("Appending to noun phrases: ", chunk.text)
         return (noun_phrases)
 
-    def processEntities(self, text):
-        entities = []
+    def processPeopleEntities(self, text):
+        entitites = []
         sentences = self.getSentences(text)
         # print("The sentences are: ", sentences)
 
         for sent in sentences:
             doc = self.nlp(sent)
             for entity in doc.ents:
-                entities.append({entity.text: entity.label_})
-        return (entities)
+                if entity.label_ == "PERSON":
+                    entitites.append(entity.text)
+                    #print("Appending to entites: ", entity.text, entity.label_)
+        return (entitites)
 
     def printGraph(self, triples):
         # triple: subject, relation, object
@@ -240,15 +242,15 @@ class MyDaemonNLP:
 
         for sentence in sentences:
             print("The sentence is: ", sentence)
-            if sentence != "":
-                doc = self.nlp(sentence)
-                triple = self.processSubjectObjectPairs(doc)
-                lower_triple = [triple[0].lower(), triple[1].lower(), triple[2].lower()]
 
-                print("THe candidate triple is: ", triple)
-                if lower_triple[0] != "" and lower_triple[1] != "" and lower_triple[2] != "":
-                    triples.append(lower_triple)
-                    print("Found triple: ", lower_triple)
+            doc = self.nlp(sentence)
+            triple = self.processSubjectObjectPairs(doc)
+            lower_triple = [triple[0].lower(), triple[1].lower(), triple[2].lower()]
+
+            print("THe candidate triple is: ", triple)
+            if lower_triple[0] != "" and lower_triple[1] != "" and lower_triple[2] != "":
+                triples.append(lower_triple)
+                print("Found triple: ", lower_triple)
         return (triples)
 
     def processTextTriplesNew(self, text):
@@ -259,13 +261,12 @@ class MyDaemonNLP:
 
         for sentence in sentences:
             print("The sentence is: ", sentence)
-            if sentence != "":
-                entity_pair = self.getEntities(sentence)
-                relation = self.getRelation(sentence)
-                triple = [entity_pair[0].lower(), relation.lower(), entity_pair[1].lower()]
-                if triple[0] != "" and triple[1] != "" and triple[2] != "":
-                    triples.append(triple)
-                    print("Found triple: ", triple)
+            entity_pair = self.getEntities(sentence)
+            relation = self.getRelation(sentence)
+            triple = [entity_pair[0].lower(), relation.lower(), entity_pair[1].lower()]
+            if triple[0] != "" and triple[1] != "" and triple[2] != "":
+                triples.append(triple)
+                print("Found triple: ", triple)
         return(triples)
 
     def processTextTripleSingle(self, text):
