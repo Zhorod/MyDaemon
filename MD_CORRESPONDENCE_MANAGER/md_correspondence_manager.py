@@ -4,9 +4,6 @@
 # Paul Zanelli
 # Creation date: 4th April 2020
 
-import nltk
-import requests
-import time
 import sys
 import getopt
 import pickle
@@ -102,13 +99,20 @@ class MyDaemonCorrespondenceManager:
             relation = ""
             self.profile.md_graph.print_graph_relation(relation)
             return ("I have printed the graph showing, " + relation + ", relationships")
-        if utterance.lower() == "update data":
+        if utterance.lower() == "update facebook":
             self.exchange_type = ""
             self.question_entity = ""
             self.exchange = False
             self.question = ""
-            self.profile.update_data_FB()
+            self.profile.update_FB()
             return ("I have updated the facebook data")
+        if utterance.lower() == "update email":
+            self.exchange_type = ""
+            self.question_entity = ""
+            self.exchange = False
+            self.question = ""
+            self.profile.update_email()
+            return ("I have updated the email")
         if utterance.lower() == "save profile":
             self.exchange_type = ""
             self.question_entity = ""
@@ -166,6 +170,7 @@ class MyDaemonCorrespondenceManager:
         try:
             with open('profile.txt', 'rb') as filehandle:
                 self.profile = pickle.load(filehandle)
+                filehandle.close()
         except:
             print("No file to load data from")
 
@@ -173,6 +178,7 @@ class MyDaemonCorrespondenceManager:
         try:
             with open('profile.txt', 'wb') as filehandle:
                 pickle.dump(self.profile, filehandle)
+                filehandle.close()
         except:
             print("Failed to open file")
 
@@ -198,8 +204,6 @@ def on_message(client, userdata, msg):
     else:
         print("JSON received : ", message_json)
 
-
-
     # Check that the topic is "user" which indicates a message from the user
     if msg.topic == "user":
             # The msg has content from user
@@ -221,6 +225,16 @@ def on_message(client, userdata, msg):
                 mqtt_publish.single("mydaemon", message_text, hostname="test.mosquitto.org")
                 print("JSON published: ", message_json)
 
+def text_test():
+    #while True:
+
+        #print("Waiting for input: ")
+        #user_input = input()
+        user_input = "update email"
+        response = MyDaemonCorrespondenceManager_.process_user_input(user_input)
+        print(response)
+
+
 def main(argv):
 
         local_mqtt_client = mqtt_client.Client()
@@ -232,14 +246,16 @@ def main(argv):
         # At this point we have assumed that this is the first time MyDaemon has been switched on
         # The first question is therefore "what is your name"
 
-        question = "Hello, how are you"
-        qa_json = {"user": "", "mydaemon": question}
-        qa_string = json.dumps(qa_json)
-        mqtt_publish.single("mydaemon", qa_string, hostname="test.mosquitto.org")
-        print("JSON published: ", qa_string)
+        text_test()
 
-        while True:
-                local_mqtt_client.loop_forever()
+        #question = "Hello, how are you"
+        #qa_json = {"user": "", "mydaemon": question}
+        #qa_string = json.dumps(qa_json)
+        #mqtt_publish.single("mydaemon", qa_string, hostname="test.mosquitto.org")
+        #print("JSON published: ", qa_string)
+
+        #while True:
+        #        local_mqtt_client.loop_forever()
 
 if __name__ == '__main__':
     main(sys.argv[1:])
