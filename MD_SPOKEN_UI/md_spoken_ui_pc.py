@@ -13,11 +13,11 @@ import json
 import time
 import sys
 
-from google.cloud.speech import enums
-from google.cloud.speech import types
+#from google.cloud.speech import enums
+#from google.cloud.speech import types
 
-from md_tts_pc import md_tts_speak
-from md_stt_pc import md_stt_capture
+#from md_tts_pc import md_tts_speak
+#from md_stt_pc import md_stt_capture
 
 def on_connect(mqtt_client, userdata, flags, rc):
     print("Connected with result code " + str(rc))
