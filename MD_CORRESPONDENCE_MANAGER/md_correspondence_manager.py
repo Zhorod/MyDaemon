@@ -30,11 +30,7 @@ class MyDaemonCorrespondenceManager:
         self.profile = MyDaemonProfileManager()
         self.eliza = Eliza()
 
-        self.question = ""
         self.response_triple = []
-        self.question_entity = ""
-        self.exchange = False
-        self.exchange_type = ""
 
         # if there is data load it
         self.load_data()
@@ -45,87 +41,47 @@ class MyDaemonCorrespondenceManager:
         # cache the first name
         self.first_name = self.profile.get_first_name()
 
-    def process_user_response_PEOPLE(self, user_text, question_text):
-        print("processing response to a question")
-        triple = self.nlp.processTextTripleSingle(user_text)
-        if triple != "" and triple[1] != "" and triple[2] != "":
-            self.response_triple= triple
-            response = self.question_entity + ". " + self.response_triple[1] + ". " + self.response_triple[2]
-
-            #response = self.response_triple[0] + ". " + self.response_triple [1] + ". " + self.response_triple [2]
-            self.exchange_type = "CONFIRM"
-        else:
-            # failed to complete exchange - reset
-            response = "Hmmmmmmm!"
-            self.exchange_type = ""
-            self.exchange = False
-            self.question = ""
-        return(response)
-
-    def process_user_response_CONFIRM(self, user_text, question_text):
-        # check to see if it is a yes or a no or not sure
-        print("checking for answer")
-        if user_text.lower() == "yes":
-            # we have a confirmed triple
-            # add the triple the graph in the profile
-            self.profile.add_triple_to_graph(self.response_triple)
-            response = "Got it!"
-        else:
-            response = "Hmmmmmmmmm!"
-        self.exchange_type = ""
-        self.question_entity = ""
-        self.exchange = False
-        self.question = ""
-        return (response)
+    def send_move(self, command, distance):
+        qa_json = {"command": command, "distance": distance}
+        qa_string = json.dumps(qa_json)
+        mqtt_publish.single("mydaemon/move", qa_string, hostname="test.mosquitto.org")
+        print("JSON published: ", qa_string)
 
     def get_db_lookup_repsonse(self, utterance, probability):
         return(self.db_lookup.get_response(utterance,probability))
 
     def process_user_input(self, utterance):
         # we have new input from the user
+        turn_amount = 0.3
+        move_amount = 1
 
-        # is this the start of an exchange
         if utterance.lower() == "shutdown" or utterance.lower() == "shut down":
             sys.exit()
-        if utterance.lower() == "print graph":
-            self.exchange_type = ""
-            self.question_entity = ""
-            self.exchange = False
-            self.question = ""
+        elif utterance.lower() == "forward":
+            self.send_move("forward", move_amount)
+            return("forward")
+        elif utterance.lower() == "back":
+            self.send_move("back", move_amount)
+            return ("back")
+        elif utterance.lower() == "left":
+            self.send_move("left", turn_amount)
+            return ("left")
+        elif utterance.lower() == "right":
+            self.send_move("right", turn_amount)
+            return ("right")
+        elif utterance.lower() == "print graph":
             self.profile.md_graph.print_graph()
             return ("I have printed the graph.")
-        if utterance.lower() == "print graph":
-            self.exchange_type = ""
-            self.question_entity = ""
-            self.exchange = False
-            self.question = ""
+        elif utterance.lower() == "print graph":
             relation = ""
             self.profile.md_graph.print_graph_relation(relation)
             return ("I have printed the graph showing, " + relation + ", relationships")
-        if utterance.lower() == "update data":
-            self.exchange_type = ""
-            self.question_entity = ""
-            self.exchange = False
-            self.question = ""
+        elif utterance.lower() == "update data":
             self.profile.update_data_FB()
             return ("I have updated the facebook data")
-        if utterance.lower() == "save profile":
-            self.exchange_type = ""
-            self.question_entity = ""
-            self.exchange = False
-            self.question = ""
+        elif utterance.lower() == "save profile":
             self.dump_data()
             return ("I have saved the profile.")
-
-        if self.exchange:
-            # we are already in an exchange
-            # call the response based on the exchange type
-            if self.exchange_type == "PEOPLE":
-                response = self.process_user_response_PEOPLE(utterance, self.question)
-                return (response)
-            if self.exchange_type == "CONFIRM":
-                response = self.process_user_response_CONFIRM(utterance, self.question)
-                return (response)
 
         # get a response for the database lookup
         # will only return a result if it is above probability
@@ -139,23 +95,20 @@ class MyDaemonCorrespondenceManager:
 
         # try to get an unprocessed entity
         next_unprocessed_entity = self.profile.get_next_unprocessed_entity()
-        if next_unprocessed_entity != "":
-            print("Unread entity is:", next_unprocessed_entity)
-            # build latest post response and return
-            response = self.first_name + ". Can you tell me more about " + next_unprocessed_entity
-            self.question = response
-            self.question_entity = next_unprocessed_entity
-            self.exchange = True
-            self.exchange_type = "PEOPLE"
-            return (response)
+
+        #if next_unprocessed_entity != "":
+        #    print("Unread entity is:", next_unprocessed_entity)
+        #    # build latest post response and return
+        #    response = self.first_name + ". Can you tell me more about " + next_unprocessed_entity
+        #    return (response)
 
         # try to get an unprocessed post
-        next_unread_post = self.profile.get_next_unprocessed_post()
-        if next_unread_post != "":
-            print("Unread post is:", next_unread_post)
-            # build latest post response and return
-            response = self.first_name + ". Can you tell me more about your recent Facebook post that said: " + next_unread_post
-            return (response)
+        #next_unread_post = self.profile.get_next_unprocessed_post()
+        #if next_unread_post != "":
+        #    print("Unread post is:", next_unread_post)
+        #    # build latest post response and return
+        #    response = self.first_name + ". Can you tell me more about your recent Facebook post that said: " + next_unread_post
+        #    return (response)
 
         # default to chatbot
         response = self.eliza.get_next_response(utterance)
@@ -184,7 +137,7 @@ def on_connect(client, userdata, flags, rc):
 
     # Subscribing in on_connect() - if we lose the connection and
     # reconnect then subscriptions will be renewed.
-    client.subscribe("user")
+    client.subscribe("mydaemon/user")
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
@@ -198,28 +151,23 @@ def on_message(client, userdata, msg):
     else:
         print("JSON received : ", message_json)
 
+        if message_json["user"] != "":
 
+            response = MyDaemonCorrespondenceManager_.process_user_input(message_json["user"])
 
-    # Check that the topic is "user" which indicates a message from the user
-    if msg.topic == "user":
-            # The msg has content from user
-            if message_json["user"] != "":
-
-                response = MyDaemonCorrespondenceManager_.process_user_input(message_json["user"])
-
-                # post the response
-                qa_json = {"user": message_json["user"], "mydaemon": response}
-                qa_string = json.dumps(qa_json)
-                mqtt_publish.single("mydaemon", qa_string, hostname="test.mosquitto.org")
-                print("JSON published: ", qa_string)
-            else:
-                # Publish an empty message to keep the conversation going
-                # This will force anybody listening to the "mydaemon" topic to run their callback
-                # this should ensure that MyDaemon is listening
-                message_json["mydaemon"] = ""
-                message_text = json.dumps(message_json)
-                mqtt_publish.single("mydaemon", message_text, hostname="test.mosquitto.org")
-                print("JSON published: ", message_json)
+            # post the response
+            response_json = {"user": message_json["user"], "mydaemon": response}
+            response_string = json.dumps(response_json)
+            mqtt_publish.single("mydaemon/mydaemon", response_string, hostname="test.mosquitto.org")
+            print("JSON published: ", response_string)
+        else:
+            # Publish an empty message to keep the conversation going
+            # This will force anybody listening to the "mydaemon" topic to run their callback
+            # this should ensure that MyDaemon is listening
+            message_json["mydaemon"] = ""
+            message_text = json.dumps(message_json)
+            mqtt_publish.single("mydaemon/mydaemon", message_text, hostname="test.mosquitto.org")
+            print("JSON published: ", message_json)
 
 def main(argv):
 
@@ -228,15 +176,13 @@ def main(argv):
         local_mqtt_client.on_message = on_message
         local_mqtt_client.connect("test.mosquitto.org", 1883, 60)
 
-        # We have jsut started up so we need to start the conversation
-        # At this point we have assumed that this is the first time MyDaemon has been switched on
-        # The first question is therefore "what is your name"
+        # We are alive - say something
 
-        question = "Hello, how are you"
-        qa_json = {"user": "", "mydaemon": question}
-        qa_string = json.dumps(qa_json)
-        mqtt_publish.single("mydaemon", qa_string, hostname="test.mosquitto.org")
-        print("JSON published: ", qa_string)
+        utterance = "Yo!"
+        statement_response_json = {"user": "", "mydaemon": utterance}
+        statement_response_string = json.dumps(statement_response_json)
+        mqtt_publish.single("mydaemon/mydaemon", statement_response_string, hostname="test.mosquitto.org")
+        print("JSON published: ", statement_response_string)
 
         while True:
                 local_mqtt_client.loop_forever()
