@@ -12,7 +12,6 @@ from google.cloud.speech import enums
 from google.cloud.speech import types
 
 from md_tts_pi import md_tts_speak
-from md_stt_pi import md_stt_capture
 
 def on_connect(mqtt_client, userdata, flags, rc):
     print("Connected with result code " + str(rc))
@@ -24,6 +23,7 @@ def on_connect(mqtt_client, userdata, flags, rc):
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(mqtt_client, userdata, msg):
+
     # check to see if the message has valid JSON content
     message_text = msg.payload.decode('utf-8')
     try:
@@ -34,27 +34,23 @@ def on_message(mqtt_client, userdata, msg):
         print("JSON received : ", message_json)
 
     if message_json["mydaemon"] != None:
+        
+        # publish speaking status to general
+        publish_json = {"speaking": True}
+        publish_string = json.dumps(publish_json)
+        mqtt_publish.single("mydaemon/general", publish_string, hostname="test.mosquitto.org")
+        # print the JSON
+        print("JSON published: ", publish_json)
+                
         md_tts_speak(message_json["mydaemon"])
-    
-    # get the next input from the user
-    while True:
-        utterance = md_stt_capture()
-        print("Captured: ", utterance)
-        #MyDaemonSTT_.recognise_speech()
-        if utterance != None:
-            # The utternace has data in it
-            # Add the utterance to the JSON
-            message_json["user"] = utterance
-            message_string = json.dumps(message_json)
-            
-            # publish the JSON
-            mqtt_publish.single("mydaemon/user", message_string, hostname="test.mosquitto.org")
-            # print the JSON
-            print("JSON published: ", message_json)
-            if utterance.lower() == "shutdown" or utterance.lower() == "shut down":
-                sys.exit()
-            # stop listening and wait for an answer
-            break
+        
+        # publish speaking status to general
+        publish_json = {"speaking": False}
+        publish_string = json.dumps(publish_json)
+        mqtt_publish.single("mydaemon/general", publish_string, hostname="test.mosquitto.org")
+        # print the JSON
+        print("JSON published: ", message_json)
+                
 
 def main():
     # Create an MQTT client and attach our routines to it.
@@ -70,3 +66,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
