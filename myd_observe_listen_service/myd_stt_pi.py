@@ -47,7 +47,7 @@ class MyDaemonSTT:
 
 MyDaemonSTT_ = MyDaemonSTT()
 
-def md_stt_capture():
+def myd_stt_capture():
     return(MyDaemonSTT_.capture_utterance())
 
 def main():

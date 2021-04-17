@@ -58,7 +58,7 @@ class MyDaemonTTS:
 
 MyDaemonTTS_ = MyDaemonTTS()
 
-def md_tts_speak(input_text):
+def myd_tts_speak(input_text):
     MyDaemonTTS_.speak_text(input_text)
 
 if __name__ == '__main__':
