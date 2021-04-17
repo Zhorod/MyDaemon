@@ -48,23 +48,23 @@ def listen():
             time.sleep(0.2)
         else:
             utterance = myd_stt_capture()
-            print("Captured: ", utterance)
+            #print("Captured: ", utterance)
             if utterance != None:
                 # The utternace has data in it
                 # Add the utterance to the JSON
-                speaking = True
-                message_json = {"user": utterance, "mydaemon": ""}
+                message_json = {"utterance": utterance, "time": ""}
                 message_string = json.dumps(message_json)
                 
                 # publish the JSON
-                mqtt_publish.single("mydaemon/user", message_string, hostname="test.mosquitto.org")
+                mqtt_publish.single("mydaemon/listen", message_string, hostname="test.mosquitto.org")
                 
                 # print the JSON
                 print("JSON published: ", message_json)
                 
                 # check for a shutdown command
                 if utterance.lower() == "shutdown" or utterance.lower() == "shut down":
-                    sys.exit()
+                    print("shutting down")
+                    return()
     
 
 def main():
