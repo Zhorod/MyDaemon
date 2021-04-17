@@ -11,7 +11,7 @@ import sys
 from google.cloud.speech import enums
 from google.cloud.speech import types
 
-from md_stt_pi import md_stt_capture
+from myd_stt_pi import myd_stt_capture
 
 speaking = False
 
@@ -47,7 +47,7 @@ def listen():
         if speaking == True:
             time.sleep(0.2)
         else:
-            utterance = md_stt_capture()
+            utterance = myd_stt_capture()
             print("Captured: ", utterance)
             if utterance != None:
                 # The utternace has data in it
