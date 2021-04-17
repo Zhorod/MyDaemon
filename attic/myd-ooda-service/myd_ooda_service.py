@@ -1,8 +1,5 @@
-# This programme checks to see if there is an utterance on the utterance server
-# If there is it uses nltk to decompse and tag the utterance
-# Note that I am dealing with an utterance but considering it to be a sentence
-# Paul Zanelli
-# Creation date: 4th April 2020
+# This file is the main element of the correspondence service
+# It runs listneing to the "mydeamon/correspondence
 
 import nltk
 import requests
@@ -23,7 +20,7 @@ from md_eliza_A import Eliza
 
 from md_nlp import MyDaemonNLP
 
-class MyDaemonCorrespondenceManager:
+class MyDaemonCorrespondenceService:
     def __init__(self):
         print("Initialising the correspondence manager class")
         self.db_lookup = MyDaemonDBLookup()
