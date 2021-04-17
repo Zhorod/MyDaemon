@@ -110,15 +110,15 @@ def on_message(client, userdata, msg):
 
 def decide():
     while True:
-        print("Deciding")
-        response_json = {"utterance": "left", "time": "now"}
-        response_string = json.dumps(response_json)
-        mqtt_publish.single("mydaemon/speak", response_string, hostname="test.mosquitto.org")
-        print("JSON published: ", response_string)
+        #print("Deciding")
+        #response_json = {"utterance": "left", "time": "now"}
+        #response_string = json.dumps(response_json)
+        #mqtt_publish.single("mydaemon/speak", response_string, hostname="test.mosquitto.org")
+        #print("JSON published: ", response_string)
 
         MyDaemonDecide_.process()
 
-        time.sleep(10)
+        time.sleep(0.2)
 
 def main(argv):
 
