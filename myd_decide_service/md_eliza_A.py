@@ -36,6 +36,8 @@ class Eliza:
         self.keys = {}
         self.memory = []
 
+        self.load('doctor.txt')
+
     def load(self, path):
         key = None
         decomp = None
@@ -225,11 +227,14 @@ class Eliza:
 
         print(self.final())
 
-def main():
-    eliza = Eliza()
-    eliza.load('doctor.txt')
-    eliza.run()
+    def get_next_response(self, input_text):
+        return( self.respond(input_text))
 
-if __name__ == '__main__':
-    logging.basicConfig()
-    main()
+#def main():
+#    eliza = Eliza()
+#    eliza.load('doctor.txt')
+#    eliza.run()
+
+#if __name__ == '__main__':
+#    logging.basicConfig()
+#    main()

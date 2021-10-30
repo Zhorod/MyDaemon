@@ -24,10 +24,10 @@ def load_database():
     #project_home = Path("")
     #if (project_home) not in sys.path:
     #    sys.path = [project_home] + sys.path
-    # dataset = pd.read_csv(path_on_windows)
 
-    #path_on_windows = PureWindowsPath(project_home / "md_gm_db.csv")
-    dataset = pd.read_csv("md_gm_db.csv")
+    #path_on_windows = PureWindowsPath(project_home / "md_qa_db.csv")
+    #dataset = pd.read_csv(path_on_windows)
+    dataset = pd.read_csv("md_qa_db.csv")
 
     dataset.head()
     # print(dataset) # print the data set
@@ -77,8 +77,11 @@ def stop_word(text):
         lema_word.append(lema_token)
     return " ".join(lema_word)
 
-class MyDaemonGMDB:
+class MyDaemonDBLookup:
     def __init__(self):
+        # initialising the MyDaemonDBLookup class
+        print("Initialising the database lookup class")
+
         self.database = load_database()
 
         # fill any undefined values
@@ -107,8 +110,7 @@ class MyDaemonGMDB:
         self.database_tfidf = pd.DataFrame(x_tfidf, columns=self.tfidf.get_feature_names())
         self.database_tfidf.head()
 
-    def get_response(self, question):
-
+    def get_response(self, question, probability):
         question = text_normalization(question)
         #question = stop_word(question)
         #print("The normalized question with stop words removed is: " + question)
@@ -120,31 +122,10 @@ class MyDaemonGMDB:
         question_tfidf = self.tfidf.transform([question]).toarray()  # applying tf-idf
 
         distances = 1 - pairwise_distances(self.database_tfidf, question_tfidf, metric='cosine')
-        index_value = distances.argmax()  # getting the index value
-        return(str(self.database['Text Response'].loc[index_value]))
 
-MyDaemonGMDB_ = MyDaemonGMDB()
-
-def md_gm_db_get_response(input_text):
-    return(MyDaemonGMDB_.get_response(input_text))
-
-def main(argv):
-    # get the question from the command line parameters
-    # set a default question
-    question = "Have you got any toilet paper"
-    try:
-        opts, args = getopt.getopt(argv, "q:")
-    except getopt.GetoptError:
-        print("mydaemon.py -h -q <url>")
-        sys.exit(2)
-    for opt, arg in opts:
-        if opt == '-h':
-            print("nltk-chatbot.py -h -u <url>")
-            sys.exit()
-        elif opt in ("-q"):
-            question = arg
-    return (mydaemon_gm_db_get_response(question))
-
-if __name__ == '__main__':
-    answer = main(sys.argv[1:])
-    print("The answer is :" + answer)
+        max_probability = distances.max()
+        if max_probability >= probability:
+             index_value = distances.argmax()  # getting the index value
+             return(str(self.database['Text Response'].loc[index_value]))
+        else:
+             return ("")
