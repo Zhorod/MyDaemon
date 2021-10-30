@@ -11,6 +11,8 @@ import sys
 from google.cloud.speech import enums
 from google.cloud.speech import types
 
+from subprocess import call
+
 from myd_tts_pi import myd_tts_speak
 
 def on_connect(mqtt_client, userdata, flags, rc):
@@ -19,7 +21,7 @@ def on_connect(mqtt_client, userdata, flags, rc):
     # Subscribing in on_connect() - if we lose the connection and
     # reconnect then subscriptions will be renewed.
     mqtt_client.subscribe("mydaemon/speak")
-
+    mqtt_client.subscribe("mydaemon/general")
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(mqtt_client, userdata, msg):
@@ -31,17 +33,18 @@ def on_message(mqtt_client, userdata, msg):
     except Exception as e:
         print("Couldn't parse raw data: %s" % message_text, e)
     else:
-        print("JSON received : ", message_json)
+        print("JSON received (in speak): ", message_json)
 
-    if message_json["utterance"] != None:
-        
+    if "utterance" in message_json.keys():      
         # publish speaking status to general
         publish_json = {"speaking": True}
         publish_string = json.dumps(publish_json)
         mqtt_publish.single("mydaemon/general", publish_string, hostname="test.mosquitto.org")
+        
         # print the JSON
         print("JSON published: ", publish_json)
                 
+        # speak the utterance
         myd_tts_speak(message_json["utterance"])
         
         # publish speaking status to general
@@ -50,7 +53,10 @@ def on_message(mqtt_client, userdata, msg):
         mqtt_publish.single("mydaemon/general", publish_string, hostname="test.mosquitto.org")
         # print the JSON
         print("JSON published: ", publish_json)
-                
+    
+    if "shutdown" in message_json.keys():
+        print("Shutdown received")
+        call("sudo shutdown -h now", shell=True)
 
 def main():
     # Create an MQTT client and attach our routines to it.
@@ -66,5 +72,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
 

@@ -13,9 +13,6 @@ import six
 from six.moves import range
 
 from myd_video_stream_reader import VideoStreamReader
-from myd_object_detector import ObjectDetector
-
-#from six.moves import zip
 
 class ObjectDetector():
   def __init__(self):
@@ -98,6 +95,8 @@ class ObjectDetector():
   # process an image
   def process_image(self, image_np):
 
+    objects = []
+
     input_tensor = tf.convert_to_tensor(np.expand_dims(image_np, 0), dtype=tf.float32)
     detections, predictions_dict, shapes = self.detect_fn(input_tensor)
 
@@ -106,10 +105,7 @@ class ObjectDetector():
 
     # have there been any detections
 
-    # is there something interesting
-    interesting = True
-
-    if interesting and detections:
+    if detections:
 
       # show the image with detections
       # take a copy of the image to add the detection boxes
@@ -166,54 +162,15 @@ class ObjectDetector():
           else:
             class_name = 'N/A'
           display_str = str(class_name)
+          objects.append(display_str)
           print("Class: ", display_str)
 
     print("processed an image")
-
-def on_connect(mqtt_client, userdata, flags, rc):
-  print("Connected with result code " + str(rc))
-
-  # Subscribing in on_connect() - if we lose the connection and
-  # reconnect then subscriptions will be renewed.
-  mqtt_client.subscribe("mydaemon/general")
-
-# The callback for when a PUBLISH message is received from the server.
-def on_message(mqtt_client, userdata, msg):
-  # check to see if the message has valid JSON content
-  # check to see if the message has valid JSON content
-
-  message_text = msg.payload.decode('utf-8')
-  try:
-    message_json = json.loads(message_text)
-  except Exception as e:
-    print("Couldn't parse raw data: %s" % message_text, e)
-  else:
-    print("JSON received : ", message_json)
-
-  if message_json["speaking"] != None:
-    speaking = message_json["speaking"]
-    print("The status of speaking has changed to: ", speaking)
+    return(objects)
 
 def main():
   video_stream_reader = VideoStreamReader('http://192.168.1.215:8000/stream.mjpg')
   object_detector = ObjectDetector()
-  # Create an MQTT client and attach our routines to it.
-  local_mqtt_client = mqtt_client.Client()
-  local_mqtt_client.on_connect = on_connect
-  local_mqtt_client.on_message = on_message
-  local_mqtt_client.connect("test.mosquitto.org", 1883, 60)
-  local_mqtt_client.loop_start()
-
-  while True:
-    # Read frame from camera
-    # ret, image_np = video_stream_reader.read()
-    image_np = video_stream_reader.read()
-
-    # process the image
-    object_detector.process_image(image_np)
-
-    local_mqtt_client.loop_stop()
-
 
 if __name__ == '__main__':
   main()

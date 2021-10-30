@@ -7,13 +7,20 @@ import json
 import time
 import sys
 
+from myd_voice_db_lookup import MyDaemonDBLookup
+from md_eliza_A import Eliza
+from md_nlp import MyDaemonNLP
+
 class MyDaemonDecide:
     def __init__(self):
         print("Initialising the decide service class")
         self.unprocessed_utterances = []
         self.unprocessed_objects = []
-        self.turn_amount = 0.3
+        self.turn_amount = 0.15
         self.move_amount = 1
+        self.probability = 0.8 # probability of DB lookup
+        self.db_lookup = MyDaemonDBLookup()
+        self.eliza = Eliza()
 
     def send_move(self, command, distance):
         qa_json = {"command": command, "distance": distance}
@@ -25,41 +32,94 @@ class MyDaemonDecide:
         return(self.db_lookup.get_response(utterance,probability))
 
     def speak_objects(self):
-        for i in range(len(self.unprocessed_objects)):
-            print("speaking objects")
+        if len(self.unprocessed_objects) > 0:
+            utterance = "I can see: "
+            if len(self.unprocessed_objects[0]["objects"]) > 0:
+                for i in range(len(self.unprocessed_objects[0]["objects"])):
+                    utterance = utterance + " a " + self.unprocessed_objects[0]["objects"][i] + ";"
+            print(utterance)
+            qa_json = {"utterance": utterance, "time": ""}
+            qa_string = json.dumps(qa_json)
+            mqtt_publish.single("mydaemon/speak", qa_string, hostname="test.mosquitto.org")
+            print("JSON published: ", qa_string)
+            self.unprocessed_objects.pop(0)
+        else:
+            qa_json = {"utterance": "nothing yet", "time": ""}
+            qa_string = json.dumps(qa_json)
+            mqtt_publish.single("mydaemon/speak", qa_string, hostname="test.mosquitto.org")
+            print("JSON published: ", qa_string)
 
     def check_commands(self):
         for i in range(len(self.unprocessed_utterances)):
             if self.unprocessed_utterances[i]["utterance"].lower() == "shutdown":
+                qa_json = {"shutdown": "shutdown", "time": ""}
+                qa_string = json.dumps(qa_json)
+                mqtt_publish.single("mydaemon/general", qa_string, hostname="test.mosquitto.org")
+                print("JSON published: ", qa_string)
                 self.unprocessed_utterances.pop(i)
                 sys.exit()
             elif self.unprocessed_utterances[i]["utterance"].lower() == "shut down":
-                self.unprocessed_utterances.remove("shut down")
+                qa_json = {"shutdown": "shutdown", "time": ""}
+                qa_string = json.dumps(qa_json)
+                mqtt_publish.single("mydaemon/general", qa_string, hostname="test.mosquitto.org")
+                print("JSON published: ", qa_string)
+                self.unprocessed_utterances.pop(i)
                 sys.exit()
             elif self.unprocessed_utterances[i]["utterance"].lower() == "forward":
                 self.unprocessed_utterances.pop(i)
                 self.send_move("forward", self.move_amount)
-                break
+                return(True)
             elif self.unprocessed_utterances[i]["utterance"].lower() == "back":
                 self.unprocessed_utterances.pop(i)
                 self.send_move("back", self.move_amount)
-                break
+                return(True)
             elif self.unprocessed_utterances[i]["utterance"].lower() == "left":
                 self.unprocessed_utterances.pop(i)
                 self.send_move("left", self.turn_amount)
-                break
+                return (True)
             elif self.unprocessed_utterances[i]["utterance"].lower() == "right":
                 self.unprocessed_utterances.pop(i)
                 self.send_move("right", self.turn_amount)
-                break
-            elif self.unprocessed_utterances[i]["utterance"].lower() == "what can you see":
+                return (True)
+            elif self.unprocessed_utterances[i]["utterance"].lower() == "report":
                 self.unprocessed_utterances.pop(i)
                 self.speak_objects()
-                break
+                return (True)
+        return(False)
+
+    def check_database(self):
+        if len(self.unprocessed_utterances) > 0:
+            response = self.db_lookup.get_response(self.unprocessed_utterances[0]["utterance"].lower(), self.probability)
+            if response != "":
+                qa_json = {"utterance": response, "time": ""}
+                qa_string = json.dumps(qa_json)
+                mqtt_publish.single("mydaemon/speak", qa_string, hostname="test.mosquitto.org")
+                print("JSON published: ", qa_string)
+                self.unprocessed_utterances.pop(0)
+                return (True)
+        return(False)
+
+    def use_chatbot(self):
+        if len(self.unprocessed_utterances) > 0:
+            response = self.eliza.get_next_response(self.unprocessed_utterances[0]["utterance"].lower())
+            if response != "":
+                qa_json = {"utterance": response, "time": ""}
+                qa_string = json.dumps(qa_json)
+                mqtt_publish.single("mydaemon/speak", qa_string, hostname="test.mosquitto.org")
+                print("JSON published: ", qa_string)
+                self.unprocessed_utterances.pop(0)
+                return (True)
+        return(False)
 
     def process(self):
         # first think we do is respond to any direct commands
-        self.check_commands()
+        if self.check_commands():
+            return(True)
+        if self.check_database():
+            return (True)
+        if self.use_chatbot():
+            return (True)
+        return(False)
 
 MyDaemonDecide_ = MyDaemonDecide()
 
@@ -100,8 +160,10 @@ def on_look_message(client, userdata, msg):
     else:
         print("JSON received : ", message_json)
         if "objects" in message_json and "time" in message_json:
-            #MyDaemonDecide_.unprocessed_utterances.append({"utterance": message_json["utterance"], "time": message_json["time"]})
-            print("added new objects " + message_json["objects"] + " at time " + message_json["time"])
+            object_list = message_json["objects"]
+            if len(object_list) > 0:
+                MyDaemonDecide_.unprocessed_objects.insert(0,{"objects": object_list, "time": message_json["time"]})
+                print("added new objects ", MyDaemonDecide_.unprocessed_objects[0])
         else:
             print("the look message had a missing key")
 
@@ -137,42 +199,3 @@ def main(argv):
 
 if __name__ == '__main__':
     main(sys.argv[1:])
-
-#if utterance.lower() == "shutdown" or utterance.lower() == "shut down":
-#    sys.exit()
-#elif utterance.lower() == "forward":
-#    self.send_move("forward", move_amount)
-#    return ("forward")
-#elif utterance.lower() == "back":
-#    self.send_move("back", move_amount)
-#    return ("back")
-#elif utterance.lower() == "left":
-#    self.send_move("left", turn_amount)
-#    return ("left")
-#elif utterance.lower() == "right":
-#    self.send_move("right", turn_amount)
-#    return ("right")
-#elif utterance.lower() == "print graph":
-#    self.profile.md_graph.print_graph()
-#    return ("I have printed the graph.")
-#elif utterance.lower() == "print graph":
-#    relation = ""
-#    self.profile.md_graph.print_graph_relation(relation)
-#    return ("I have printed the graph showing, " + relation + ", relationships")
-#elif utterance.lower() == "update data":
-#    self.profile.update_data_FB()
-#    return ("I have updated the facebook data")
-#elif utterance.lower() == "save profile":
-#    self.dump_data()
-#    return ("I have saved the profile.")
-# get a response for the database lookup
-# will only return a result if it is above probability
-#probability = 0.8
-#response = self.db_lookup.get_response(utterance, probability)
-#if response != "":
-# We have a response from the DB so should use it
-#    return (response)
-# try to get an unprocessed entity
-#next_unprocessed_entity = self.profile.get_next_unprocessed_entity()
-# default to chatbot
-#response = self.eliza.get_next_response(utterance)

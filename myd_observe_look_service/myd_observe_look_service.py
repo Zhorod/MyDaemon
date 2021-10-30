@@ -34,6 +34,11 @@ def on_message(mqtt_client, userdata, msg):
     else:
         print("JSON received : ", message_json)
 
+    if "shutdown" in message_json.keys():
+        print("Shutdown")
+        sys.ext(0)
+
+
 def process_video_stream():
     while True:
         # Read frame from camera
@@ -41,7 +46,21 @@ def process_video_stream():
         image_np = video_stream_reader.read()
 
         # process the image
-        object_detector.process_image(image_np)
+        objects = object_detector.process_image(image_np)
+
+        if len(objects) > 0:
+            print("detected: ", objects)
+            message_string = json.dumps(objects)
+
+            message_json = {"objects": objects, "time": ""}
+            message_string = json.dumps(message_json)
+
+            # publish the JSON
+            mqtt_publish.single("mydaemon/look", message_string, hostname="test.mosquitto.org")
+
+            # print the JSON
+            print("JSON published: ", message_string)
+
 
 def main():
     # Create an MQTT client and attach our routines to it.
