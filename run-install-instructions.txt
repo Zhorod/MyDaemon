@@ -1,5 +1,24 @@
-MyDaemonV2 installation instructions
-Updated 30th May2020
+MyDaemonV2 run installation instructions
+Updated 30th October
+
+Run instructions
+Assuming the devices have all of the necesary components to run the scripts, of not see installation instructions below for help
+On the Pi with speaker and Microphone
+Run the following two scripts:
+- MyDaemon\myd_observe_listen_service\myd_observe_listen_service.sh
+- MyDaemon\myd_act_speak_service\myd_act_speak_service.sh
+
+On the Pi with the motor controllers and camera
+Run the following two scripts:
+- MyDaemon\myd_act_move_service\myd_act_move_service.sh
+- MyDaemon\myd_video_streamer_service\myd_video_streamer_service.sh
+
+On the PC run the following two scripts
+- MyDaemon\myd_decide_service\myd_decide_service.bat
+- MyDaemon\myd_observe_look\myd_observe_look_service.bat
+
+
+
 
 1) Cloudspeech credentials
 The MyDaemon spoken user interface uses Google CloudSPeech for both speech to text (STT) and text to speech (TTS). There are two implementations, one for a PC and one for a Raspberry PI. Both require credentials from Google in the form of a JSON though they need to be put in different places for the PI and PC version. 
