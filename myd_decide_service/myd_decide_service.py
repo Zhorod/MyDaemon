@@ -1,11 +1,11 @@
 # This file is the main element of the OODA service
 # OODA stands for observe, orient, decide, act
 
-import paho.mqtt.publish as mqtt_publish
-import paho.mqtt.client as mqtt_client
+import paho.mqtt.client as mqtt
 import json
 import time
 import sys
+import argparse
 
 from myd_voice_db_lookup import MyDaemonDBLookup
 from md_eliza_A import Eliza
@@ -22,16 +22,16 @@ class MyDaemonDecide:
         self.db_lookup = MyDaemonDBLookup()
         self.eliza = Eliza()
 
-    def send_move(self, command, distance):
+    def send_move(self, command, distance, mqtt_client):
         qa_json = {"command": command, "distance": distance}
         qa_string = json.dumps(qa_json)
-        mqtt_publish.single("mydaemon/move", qa_string, hostname="test.mosquitto.org")
+        mqtt_client.publish("mydaemon/move", qa_string)
         print("JSON published: ", qa_string)
 
     def get_db_lookup_repsonse(self, utterance, probability):
         return(self.db_lookup.get_response(utterance,probability))
 
-    def speak_objects(self):
+    def speak_objects(self, mqtt_client):
         if len(self.unprocessed_objects) > 0:
             utterance = "I can see: "
             if len(self.unprocessed_objects[0]["objects"]) > 0:
@@ -40,46 +40,46 @@ class MyDaemonDecide:
             print(utterance)
             qa_json = {"utterance": utterance, "time": ""}
             qa_string = json.dumps(qa_json)
-            mqtt_publish.single("mydaemon/speak", qa_string, hostname="test.mosquitto.org")
+            mqtt_client.publish("mydaemon/speak", qa_string)
             print("JSON published: ", qa_string)
             self.unprocessed_objects.pop(0)
         else:
             qa_json = {"utterance": "nothing yet", "time": ""}
             qa_string = json.dumps(qa_json)
-            mqtt_publish.single("mydaemon/speak", qa_string, hostname="test.mosquitto.org")
+            mqtt_client.publish("mydaemon/speak", qa_string)
             print("JSON published: ", qa_string)
 
-    def check_commands(self):
+    def check_commands(self, mqtt_client):
         for i in range(len(self.unprocessed_utterances)):
             if self.unprocessed_utterances[i]["utterance"].lower() == "shutdown":
                 qa_json = {"shutdown": "shutdown", "time": ""}
                 qa_string = json.dumps(qa_json)
-                mqtt_publish.single("mydaemon/general", qa_string, hostname="test.mosquitto.org")
+                mqtt_client.publish("mydaemon/general", qa_string)
                 print("JSON published: ", qa_string)
                 self.unprocessed_utterances.pop(i)
                 sys.exit()
             elif self.unprocessed_utterances[i]["utterance"].lower() == "shut down":
                 qa_json = {"shutdown": "shutdown", "time": ""}
                 qa_string = json.dumps(qa_json)
-                mqtt_publish.single("mydaemon/general", qa_string, hostname="test.mosquitto.org")
+                mqtt_client.publish("mydaemon/general", qa_string)
                 print("JSON published: ", qa_string)
                 self.unprocessed_utterances.pop(i)
                 sys.exit()
             elif self.unprocessed_utterances[i]["utterance"].lower() == "forward":
                 self.unprocessed_utterances.pop(i)
-                self.send_move("forward", self.move_amount)
+                self.send_move("forward", self.move_amount, mqtt_client)
                 return(True)
             elif self.unprocessed_utterances[i]["utterance"].lower() == "back":
                 self.unprocessed_utterances.pop(i)
-                self.send_move("back", self.move_amount)
+                self.send_move("back", self.move_amount, mqtt_client)
                 return(True)
             elif self.unprocessed_utterances[i]["utterance"].lower() == "left":
                 self.unprocessed_utterances.pop(i)
-                self.send_move("left", self.turn_amount)
+                self.send_move("left", self.turn_amount,mqtt_client)
                 return (True)
             elif self.unprocessed_utterances[i]["utterance"].lower() == "right":
                 self.unprocessed_utterances.pop(i)
-                self.send_move("right", self.turn_amount)
+                self.send_move("right", self.turn_amount,mqtt_client)
                 return (True)
             elif self.unprocessed_utterances[i]["utterance"].lower() == "report":
                 self.unprocessed_utterances.pop(i)
@@ -87,37 +87,37 @@ class MyDaemonDecide:
                 return (True)
         return(False)
 
-    def check_database(self):
+    def check_database(self, mqtt_client):
         if len(self.unprocessed_utterances) > 0:
             response = self.db_lookup.get_response(self.unprocessed_utterances[0]["utterance"].lower(), self.probability)
             if response != "":
                 qa_json = {"utterance": response, "time": ""}
                 qa_string = json.dumps(qa_json)
-                mqtt_publish.single("mydaemon/speak", qa_string, hostname="test.mosquitto.org")
+                mqtt_client.publish("mydaemon/speak", qa_string)
                 print("JSON published: ", qa_string)
                 self.unprocessed_utterances.pop(0)
                 return (True)
         return(False)
 
-    def use_chatbot(self):
+    def use_chatbot(self,mqtt_client):
         if len(self.unprocessed_utterances) > 0:
             response = self.eliza.get_next_response(self.unprocessed_utterances[0]["utterance"].lower())
             if response != "":
                 qa_json = {"utterance": response, "time": ""}
                 qa_string = json.dumps(qa_json)
-                mqtt_publish.single("mydaemon/speak", qa_string, hostname="test.mosquitto.org")
+                mqtt_client.publish("mydaemon/speak", qa_string)
                 print("JSON published: ", qa_string)
                 self.unprocessed_utterances.pop(0)
                 return (True)
         return(False)
 
-    def process(self):
+    def process(self, mqtt_client):
         # first think we do is respond to any direct commands
-        if self.check_commands():
+        if self.check_commands(mqtt_client):
             return(True)
-        if self.check_database():
+        if self.check_database(mqtt_client):
             return (True)
-        if self.use_chatbot():
+        if self.use_chatbot(mqtt_client):
             return (True)
         return(False)
 
@@ -130,7 +130,7 @@ MyDaemonDecide_ = MyDaemonDecide()
     # reconnect then subscriptions will be renewed.
 #    client.subscribe("mydaemon/user")
 
-# specific callback function for message that have the topic "mydaemon/
+# specific callback function for message that have the topic "mydaemon/listen"
 def on_listen_message(client, userdata, msg):
     print("received message in on_listen_message callback: " + msg.topic + " " + str(msg.qos) + " " + str(msg.payload))
 
@@ -148,6 +148,7 @@ def on_listen_message(client, userdata, msg):
         else:
             print("the listen message had a missing key")
 
+# specific callback function for message that have the topic "mydaemon/look"
 def on_look_message(client, userdata, msg):
     print("received message in on_look_message callback: " + msg.topic + " " + str(msg.qos) + " " + str(msg.payload))
 
@@ -170,32 +171,29 @@ def on_look_message(client, userdata, msg):
 def on_message(client, userdata, msg):
     print("received message in on_message callback: " + msg.topic + " " + str(msg.qos) + " " + str(msg.payload))
 
-def decide():
+def decide(mqtt_client):
     while True:
-        #print("Deciding")
-        #response_json = {"utterance": "left", "time": "now"}
-        #response_string = json.dumps(response_json)
-        #mqtt_publish.single("mydaemon/speak", response_string, hostname="test.mosquitto.org")
-        #print("JSON published: ", response_string)
-
-        MyDaemonDecide_.process()
-
+        MyDaemonDecide_.process(mqtt_client)
         time.sleep(0.2)
 
-def main(argv):
+def main(broker_address):
+    mqtt_client = mqtt.Client()  # create new instance
+    mqtt_client.message_callback_add("mydaemon/listen", on_listen_message)
+    mqtt_client.message_callback_add("mydaemon/look", on_look_message)
 
-    local_mqtt_client = mqtt_client.Client()
-    local_mqtt_client.message_callback_add("mydaemon/listen", on_listen_message)
-    local_mqtt_client.message_callback_add("mydaemon/look", on_look_message)
-    #local_mqtt_client.on_connect = on_connect
-    local_mqtt_client.on_message = on_message
-    local_mqtt_client.connect("test.mosquitto.org", 1883, 60)
-    local_mqtt_client.subscribe("mydaemon/#", 0)
-    local_mqtt_client.loop_start()
+    mqtt_client.on_message = on_message
+    mqtt_client.connect(broker_address, 1883)  # connect to broker
+    mqtt_client.subscribe("mydaemon/#", 0)
 
-    decide()
+    mqtt_client.loop_start()
+    decide(mqtt_client)
+    mqtt_client.loop_stop()
 
-    local_mqtt_client.loop_stop()
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    parser = argparse.ArgumentParser(description='mqtt broker address')
+    parser.add_argument('--broker', dest='broker_address', type=str, help='IP of MQTT broker')
+
+    args = parser.parse_args()
+    print("The broker address is: ", args.broker_address)
+    main(args.broker_address)

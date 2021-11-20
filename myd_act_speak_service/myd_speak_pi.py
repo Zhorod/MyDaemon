@@ -2,8 +2,7 @@ import argparse
 import locale
 import logging
 import requests
-import paho.mqtt.publish as mqtt_publish
-import paho.mqtt.client as mqtt_client
+import paho.mqtt.client as mqtt
 import json
 import time
 import sys
@@ -15,6 +14,7 @@ from subprocess import call
 
 from myd_tts_pi import myd_tts_speak
 
+
 def on_connect(mqtt_client, userdata, flags, rc):
     print("Connected with result code " + str(rc))
 
@@ -23,9 +23,9 @@ def on_connect(mqtt_client, userdata, flags, rc):
     mqtt_client.subscribe("mydaemon/speak")
     mqtt_client.subscribe("mydaemon/general")
 
+
 # The callback for when a PUBLISH message is received from the server.
 def on_message(mqtt_client, userdata, msg):
-
     # check to see if the message has valid JSON content
     message_text = msg.payload.decode('utf-8')
     try:
@@ -35,43 +35,48 @@ def on_message(mqtt_client, userdata, msg):
     else:
         print("JSON received (in speak): ", message_json)
 
-    if "utterance" in message_json.keys():      
+    if "utterance" in message_json.keys():
         # publish speaking status to general
         publish_json = {"speaking": True}
         publish_string = json.dumps(publish_json)
-        mqtt_publish.single("mydaemon/general", publish_string, hostname="test.mosquitto.org")
-        
+        mqtt_client.publish("mydaemon/general", publish_string)
+
         # print the JSON
         print("JSON published: ", publish_json)
-                
+
         # speak the utterance
         myd_tts_speak(message_json["utterance"])
-        
+        print("Speaking: ", message_json["utterance"])
+
         # publish speaking status to general
         publish_json = {"speaking": False}
         publish_string = json.dumps(publish_json)
-        mqtt_publish.single("mydaemon/general", publish_string, hostname="test.mosquitto.org")
+        mqtt_client.publish("mydaemon/general", publish_string)
+
         # print the JSON
         print("JSON published: ", publish_json)
-    
-    if "shutdown" in message_json.keys():
-        print("Shutdown received")
-        call("sudo shutdown -h now", shell=True)
 
-def main():
-    # Create an MQTT client and attach our routines to it.
-    local_mqtt_client = mqtt_client.Client()
-    local_mqtt_client.on_connect = on_connect
-    local_mqtt_client.on_message = on_message
-    local_mqtt_client.connect("test.mosquitto.org", 1883, 60)
+    # if "shutdown" in message_json.keys():
+    #    print("Shutdown received")
+    #    call("sudo shutdown -h now", shell=True)
 
-    while True:
-        # Wait for the question generator
-        local_mqtt_client.loop_forever()
+
+def main(broker_address):
+    mqtt_client = mqtt.Client()  # create new instance
+    mqtt_client.on_connect = on_connect
+    mqtt_client.on_message = on_message
+    mqtt_client.connect(broker_address, 1883)  # connect to broker
+
+    mqtt_client.loop_forever()
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description='mqtt broker address')
+    parser.add_argument('--broker', dest='broker_address', type=str, help='IP of MQTT broker')
+
+    args = parser.parse_args()
+    print("The broker address is: ", args.broker_address)
+    main(args.broker_address)
 
 
 
