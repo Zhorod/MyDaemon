@@ -83,7 +83,15 @@ class MyDaemonDecide:
                 return (True)
             elif self.unprocessed_utterances[i]["utterance"].lower() == "report":
                 self.unprocessed_utterances.pop(i)
-                self.speak_objects()
+                self.speak_objects(mqtt_client)
+                return (True)
+            elif self.unprocessed_utterances[i]["utterance"].lower() == "what can you see":
+                self.unprocessed_utterances.pop(i)
+                self.speak_objects(mqtt_client)
+                return (True)
+            elif self.unprocessed_utterances[i]["utterance"].lower() == "what can you say":
+                self.unprocessed_utterances.pop(i)
+                self.speak_objects(mqtt_client)
                 return (True)
         return(False)
 
@@ -164,7 +172,7 @@ def on_look_message(client, userdata, msg):
             object_list = message_json["objects"]
             if len(object_list) > 0:
                 MyDaemonDecide_.unprocessed_objects.insert(0,{"objects": object_list, "time": message_json["time"]})
-                print("added new objects ", MyDaemonDecide_.unprocessed_objects[0])
+                print("updated objects ", MyDaemonDecide_.unprocessed_objects[0])
         else:
             print("the look message had a missing key")
 

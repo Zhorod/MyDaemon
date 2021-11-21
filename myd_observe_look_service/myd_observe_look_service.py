@@ -2,8 +2,7 @@ import argparse
 import locale
 import logging
 import requests
-import paho.mqtt.publish as mqtt_publish
-import paho.mqtt.client as mqtt_client
+import paho.mqtt.client as mqtt
 import json
 import time
 import sys
@@ -39,7 +38,7 @@ def on_message(mqtt_client, userdata, msg):
         sys.ext(0)
 
 
-def process_video_stream():
+def process_video_stream(mqtt_client):
     while True:
         # Read frame from camera
         # ret, image_np = video_stream_reader.read()
@@ -56,24 +55,28 @@ def process_video_stream():
             message_string = json.dumps(message_json)
 
             # publish the JSON
-            mqtt_publish.single("mydaemon/look", message_string, hostname="test.mosquitto.org")
-
+            mqtt_client.publish("mydaemon/look", message_string)
             # print the JSON
             print("JSON published: ", message_string)
 
 
-def main():
-    # Create an MQTT client and attach our routines to it.
-    local_mqtt_client = mqtt_client.Client()
-    local_mqtt_client.on_connect = on_connect
-    local_mqtt_client.on_message = on_message
-    local_mqtt_client.connect("test.mosquitto.org", 1883, 60)
-    local_mqtt_client.loop_start()
+def main(broker_address):
+    mqtt_client = mqtt.Client()  # create new instance
+    mqtt_client.message_callback_add("mydaemon/general", on_message)
 
-    process_video_stream()
+    #mqtt_client.on_message = on_message
+    mqtt_client.connect(broker_address, 1883)  # connect to broker
+    mqtt_client.subscribe("mydaemon/#", 0)
 
-    local_mqtt_client.loop_stop()
+    mqtt_client.loop_start()
+    process_video_stream(mqtt_client)
+    mqtt_client.loop_stop()
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description='mqtt broker address')
+    parser.add_argument('--broker', dest='broker_address', type=str, help='IP of MQTT broker')
+
+    args = parser.parse_args()
+    print("The broker address is: ", args.broker_address)
+    main(args.broker_address)
