@@ -59,3 +59,14 @@ python -m spacy download en_core_web_lg (large - 800 MB) - will be requried for 
 https://developers.facebook.com/tools/explorer?method=GET&path=me%3Ffields%3Did%2Cname%2Cposts&version=v7.0
 
 Get it working here and then generated a token and copy into profile manager.
+
+
+GOTCHAS
+
+1) mqtt error that port is in us. 
+Need to identify the process using the port and kill it. Last time there was a rogue mqtt process running.
+
+2) check IP addresses
+There are a lot of hard coded IP addresses. The ones that got me were:
+	- IP in the bat files that point to the mqtt server. 
+	- IP in the test GUI
